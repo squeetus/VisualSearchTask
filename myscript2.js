@@ -23,7 +23,13 @@ var stimulusDimensions = {
 
 // end points for the non-svg shapes
 var shapeData = {
-  "triangle": [{"x": 9.895, "y": 0}, {"x": 19.79, "y": 19.79}, {"x": 0, "y": 19.79}, {"x": 9.895, "y": 0}],
+  "triangle": [
+                {"x": 9.895, "y": 0},
+                {"x": 19.79, "y": 19.79},
+                {"x": 0, "y": 19.79},
+                {"x": 9.895, "y": 0},
+                {"x": 19.79, "y": 19.79}
+              ],
   "asterisk": [
                 {"x": 9.895, "y": 0}, {"x": 9.895, "y": 9.895},
                 {"x": 16.8946, "y": 2.9}, {"x": 9.895, "y": 9.895},
@@ -46,6 +52,60 @@ var shapeData = {
           {"x": 9.895, "y": 19.79}, {"x": 9.895, "y": 9.895},
           {"x": 0, "y": 9.895}, {"x": 9.895, "y": 9.895}
         ],
+  "hexagon":  [
+                {"x": 9.895, "y": 0},
+                {"x": 1, "y": 4.95 },
+                {"x": 1, "y": 19.79 - 4.95 },
+                {"x": 9.895, "y": 19.79},
+                {"x": 18.79 , "y": 19.79 - 4.95 },
+                {"x": 18.79, "y": 4.95 },
+                {"x": 9.895, "y": 0},
+                {"x": 1, "y": 4.95 }
+              ],
+  "octagon":  [
+                {"x": 19.79 - 5.796, "y": 0},
+                {"x": 5.796, "y": 0},
+                {"x": 0, "y": 5.796 },
+                {"x": 0, "y": 19.79 - 5.796 },
+                {"x": 5.796, "y": 19.79},
+                {"x": 19.79 - 5.796 , "y": 19.79 },
+                {"x": 19.79, "y": 19.79 - 5.796 },
+                {"x": 19.79, "y": 5.796},
+                {"x": 19.79 - 5.796, "y": 0},
+                {"x": 5.796, "y": 0}
+              ],
+  "diamond":  [
+                {"x": 19.79 / 2, "y": 0},
+                {"x": 19.79 /5 , "y": 19.79/2},
+                {"x": 19.79 / 2, "y": 19.79},
+                {"x": 19.79 - 19.79 /5 , "y": 19.79/2},
+                {"x": 19.79 / 2, "y": 0},
+                {"x": 19.79 /5 , "y": 19.79/2}
+              ],
+  "tristar": [
+                {"x": 9.895, "y": 0},{"x": 9.895, "y": 9.895},
+                {"x": 17.79, "y": 17.79},{"x": 9.895, "y": 9.895},
+                {"x": 2, "y": 17.79},{"x": 9.895, "y": 9.895},
+                {"x": 9.895, "y": 0},{"x": 9.895, "y": 9.895},
+                {"x": 17.79, "y": 17.79},{"x": 9.895, "y": 9.895}
+              ],
+  "pentastar": [
+                {"x": 9.895 + 3.058, "y": 9.895 + 9.41},{"x": 9.895, "y": 9.895},
+                {"x": 9.895 - 8, "y": 9.895 + 5.816},{"x": 9.895, "y": 9.895},
+                {"x": 9.895 - 8, "y": 9.895 - 5.816},{"x": 9.895, "y": 9.895},
+                {"x": 9.895 + 3.058, "y": 9.895 - 9.41},{"x": 9.895, "y": 9.895},
+                {"x": 9.895+ 9.895, "y": 9.895},{"x": 9.895, "y": 9.895}
+              ],
+  "diagonal1": [
+                {"x": 2, "y": 2},
+                {"x": 17.79, "y": 17.79}
+              ],
+  "diagonal2": [
+                {"x": 17.79, "y": 2},
+                {"x": 2, "y": 17.79}
+              ]
+
+
 };
 
 // function to draw the lines for the various shapes
@@ -79,7 +139,7 @@ function setupVisuals() {
         .attr("x2", center()[0] + 10)
         .attr("y2", center()[1])
         .attr("stroke", "white")
-        .attr("stroke-width", 3);
+        .attr("stroke-width", 1);
 
   //Fixation cross
   svg.append("svg:line")
@@ -88,7 +148,7 @@ function setupVisuals() {
         .attr("x2", center()[0])
         .attr("y2", center()[1] + 10)
         .attr("stroke", "white")
-        .attr("stroke-width", 3);
+        .attr("stroke-width", 1);
 
   //positions
   var positions = [];
@@ -135,6 +195,8 @@ function setupVisuals() {
 
 // draw the specified shape in the specified stimulus location
 function drawShapeAtPosition(shape, position) {
+  if(position == 6 || position == 7)
+    drawFlanker(shape, position-6);
   if(position > 5 || position < 0)
     return;
 
@@ -142,8 +204,9 @@ function drawShapeAtPosition(shape, position) {
   d3.selectAll(".stimulus" + position).remove();
   d3.select(".pos" + position).style("fill", "black");
 
+  console.log("drawing ", shape, " at position ", position)
+
   if(shape == "circle") {
-    console.log("drawing circle at position ", position)
     d3.select("#stage").append("svg:circle")
         .attr("cx", positions[position][0])
         .attr("cy", positions[position][1])
@@ -153,7 +216,6 @@ function drawShapeAtPosition(shape, position) {
   }
 
   else if(shape == "square") {
-    console.log("drawing square at position ", position)
     d3.select("#stage").append("svg:rect")
         .attr("x", positions[position][0] - (stimulusDimensions.shapeSize / 2))
         .attr("y", positions[position][1] - (stimulusDimensions.shapeSize / 2))
@@ -163,49 +225,9 @@ function drawShapeAtPosition(shape, position) {
         .classed("stimulus" + position, true);
   }
 
-  else if(shape == "triangle") {
-    console.log("drawing triangle at position ", position)
+  else {
     d3.select("#stage").append("path")
-        .attr("d", lineFunction(shapeData.triangle))
-        .classed("shape", true)
-        .attr("transform", "translate("
-            + (positions[position][0] - (stimulusDimensions.shapeSize / 2))
-            + ","
-            + (positions[position][1] - (stimulusDimensions.shapeSize / 2))
-            + ")")
-        .classed("stimulus" + position, true);
-  }
-
-  else if(shape == "asterisk") {
-    console.log("drawing asterisk at position ", position)
-    d3.select("#stage").append("path")
-        .attr("d", lineFunction(shapeData.asterisk))
-        .classed("shape", true)
-        .attr("transform", "translate("
-            + (positions[position][0] - (stimulusDimensions.shapeSize / 2))
-            + ","
-            + (positions[position][1] - (stimulusDimensions.shapeSize / 2))
-            + ")")
-        .classed("stimulus" + position, true);
-  }
-
-  else if(shape == "x") {
-    console.log("drawing x at position ", position)
-    d3.select("#stage").append("path")
-        .attr("d", lineFunction(shapeData.x))
-        .classed("shape", true)
-        .attr("transform", "translate("
-            + (positions[position][0] - (stimulusDimensions.shapeSize / 2))
-            + ","
-            + (positions[position][1] - (stimulusDimensions.shapeSize / 2))
-            + ")")
-        .classed("stimulus" + position, true);
-  }
-
-  else if(shape == "+") {
-    console.log("drawing + at position ", position)
-    d3.select("#stage").append("path")
-        .attr("d", lineFunction(shapeData["+"]))
+        .attr("d", lineFunction(shapeData[shape]))
         .classed("shape", true)
         .attr("transform", "translate("
             + (positions[position][0] - (stimulusDimensions.shapeSize / 2))
@@ -247,10 +269,10 @@ function drawFlanker(shape, side) {
         .classed("flanker" + side, true);
   }
 
-  else if(shape == "triangle") {
+  else {//if(shape == "triangle") {
     console.log("drawing triangle at position ", side)
     d3.select("#stage").append("path")
-        .attr("d", lineFunction(shapeData.triangle))
+        .attr("d", lineFunction(shapeData[shape]))
         .classed("shape", true)
         .attr("transform", "translate("
             + (stimulusDimensions.flankerPos[side] - (stimulusDimensions.flankerSize / 2))
@@ -259,46 +281,28 @@ function drawFlanker(shape, side) {
             + "), scale(1.3)")
         .classed("flanker" + side, true);
   }
+}
 
-  else if(shape == "asterisk") {
-    console.log("drawing asterisk at position ", side)
-    d3.select("#stage").append("path")
-        .attr("d", lineFunction(shapeData.asterisk))
-        .classed("shape", true)
-        .attr("transform", "translate("
-            + (stimulusDimensions.flankerPos[side] - (stimulusDimensions.flankerSize / 2))
-            + ","
-            + (center()[1] - (stimulusDimensions.flankerSize / 2))
-            + "), scale(1.3)")
-        .classed("flanker" + side, true);
+function randomizeHighLoad() {
+
+  var randomShapeIndex = ["hexagon", "octagon", "diamond", "tristar", "pentastar", "diagonal1", "diagonal2"];
+  var randomPositionIndex = [0,1,2,3,4,5];
+  var s, shape, p, pos;
+
+  for(var i = 0; i < 6; i++) {
+    //console.log(randomShapeIndex, randomPositionIndex);
+
+    s = Math.floor((Math.random() * randomShapeIndex.length));
+    shape = randomShapeIndex[s];
+    randomShapeIndex.splice(s, 1);
+
+
+    p = Math.floor((Math.random() * randomPositionIndex.length));
+    pos = randomPositionIndex[p];
+    randomPositionIndex.splice(p, 1);
+
+    drawShapeAtPosition(shape, pos);
   }
-
-  else if(shape == "x") {
-    console.log("drawing x at position ", side)
-    d3.select("#stage").append("path")
-        .attr("d", lineFunction(shapeData.x))
-        .classed("shape", true)
-        .attr("transform", "translate("
-            + (stimulusDimensions.flankerPos[side] - (stimulusDimensions.flankerSize / 2))
-            + ","
-            + (center()[1] - (stimulusDimensions.flankerSize / 2))
-            + "), scale(1.3)")
-        .classed("flanker" + side, true);
-  }
-
-  else if(shape == "+") {
-    console.log("drawing + at position ", side)
-    d3.select("#stage").append("path")
-        .attr("d", lineFunction(shapeData["+"]))
-        .classed("shape", true)
-        .attr("transform", "translate("
-            + (stimulusDimensions.flankerPos[side] - (stimulusDimensions.flankerSize / 2))
-            + ","
-            + (center()[1] - (stimulusDimensions.flankerSize / 2))
-            + "), scale(1.3)")
-        .classed("flanker" + side, true);
-  }
-
 }
 
 function clearShapes() {
@@ -309,251 +313,10 @@ function clearShapes() {
 
 
 
-//
-// var fixA = document.getElementById("fixA");
-// var fixB = document.getElementById("fixB");
-// var c1 = document.getElementById("c1");
-// var c2 = document.getElementById("c2");
-// var c3 = document.getElementById("c3");
-// var c4 = document.getElementById("c4");
-// var selectedPosition = 1;
-// var selectedColor = "white";
-// var C = {
-//     "c1": document.getElementById("c1"),
-//     "c2": document.getElementById("c2"),
-//     "c3": document.getElementById("c3"),
-//     "c4": document.getElementById("c4"),
-//     "visible":false
-//     }
-//
-// var T = {
-//     "t1":document.getElementById("t1"),
-//     "t2":document.getElementById("t2"),
-//     "t3":document.getElementById("t3"),
-//     "t4":document.getElementById("t4"),
-//     "visible":true
-// }
-// var colors = {
-//     "c1": selectedColor,
-//     "c2": selectedColor,
-//     "c3": selectedColor,
-//     "c4": selectedColor,
-//     "t1": "grey",
-//     "t2": "grey",
-//     "t3": "grey",
-//     "t4": "grey"
-// };
-//
-// var svgData = {
-//     strokewidth: 3,
-//     radius: 20
-// }
-//
-// function setup(center) {
-//     setFixation(center);
-//     setCardinals(center);
-//     setT(center);
-//     setColors();
-// }
-//
-// function setT(center) {
-//     var transform1 = "translate("+ (center.x - 136) +","+ (center.y - 20) +")";
-//     var transform3 = "translate("+ (center.x + 101) +","+ (center.y - 20) +") rotate(180, 18, 20)";
-//     var transform2 = "translate("+ (center.x - 18) +","+ (center.y - 139) +") rotate(180, 18, 20)";
-//     var transform4 = "translate("+ (center.x - 18) +","+ (center.y + 99) +")";
-//
-//     T.t1.setAttributeNS(null, "transform", transform1);
-//     T.t2.setAttributeNS(null, "transform", transform2);
-//     T.t3.setAttributeNS(null, "transform", transform3);
-//     T.t4.setAttributeNS(null, "transform", transform4);
-//
-//     toggleT();
-// }
-//
-// function setColors() {
-//     $('#c1').css("stroke", colors.c1);
-//     $('#c2').css("stroke", colors.c2);
-//     $('#c3').css("stroke", colors.c3);
-//     $('#c4').css("stroke", colors.c4);
-//
-//     T.t1.setAttribute("stroke", colors.t1);
-//     T.t2.setAttribute("stroke", colors.t2);
-//     T.t3.setAttribute("stroke", colors.t3);
-//     T.t4.setAttribute("stroke", colors.t4);
-// }
-//
-// function setFixation(center) {
-//     fixA.setAttribute("x1", center.x - 10);
-//     fixA.setAttribute("y1", center.y);
-//     fixA.setAttribute("x2", center.x + 10);
-//     fixA.setAttribute("y2", center.y);
-//
-//     fixB.setAttribute("x1", center.x);
-//     fixB.setAttribute("y1", center.y - 10);
-//     fixB.setAttribute("x2", center.x);
-//     fixB.setAttribute("y2", center.y + 10);
-// }
-//
-// function setCardinals(center) {
-//     c1.setAttribute("cx", center.x - 118.74);
-//     c1.setAttribute("cy", center.y);
-//
-//     c3.setAttribute("cx", center.x + 118.74);
-//     c3.setAttribute("cy", center.y);
-//
-//     c2.setAttribute("cx", center.x);
-//     c2.setAttribute("cy", center.y - 118.74);
-//
-//     c4.setAttribute("cx", center.x);
-//     c4.setAttribute("cy", center.y + 118.74);
-// }
-//
-// //Toggle colors
-// var white = false;
-//
-// function toggle() {
-//     if (white) {
-// 	selectedColor = white;
-//
-//         $('body').css("background-color", "black");
-//         $('#c1').css("fill", "black");
-//         $('#c2').css("fill", "black");
-//         $('#c3').css("fill", "black");
-//         $('#c4').css("fill", "black");
-//
-//         if(colors.c1 == "black")
-//             colors.c1 = "white";
-//         if(colors.c2 == "black")
-//             colors.c2 = "white";
-//         if(colors.c3 == "black")
-//             colors.c3 = "white";
-//         if(colors.c4 == "black")
-//             colors.c4 = "white";
-//
-//         $('#fixA').css("stroke", "white");
-//         $('#fixB').css("stroke", "white");
-//         white = false;
-//
-//         setColors();
-//     } else {
-// 	selectedColor = "black";
-//
-//         $('body').css("background-color", "white");
-//         $('#c1').css("fill", "white");
-//         $('#c2').css("fill", "white");
-//         $('#c3').css("fill", "white");
-//         $('#c4').css("fill", "white");
-//
-//         if(colors.c1 == "white")
-//             colors.c1 = "black";
-//         if(colors.c2 == "white")
-//             colors.c2 = "black";
-//         if(colors.c3 == "white")
-//             colors.c3 = "black";
-//         if(colors.c4 == "white")
-//             colors.c4 = "black";
-//
-//         $('#fixA').css("stroke", "black");
-//         $('#fixB').css("stroke", "black");
-//         white = true;
-//
-//         setColors();
-//     }
-//
-// }
-//
-// function increaseStrokeSize() {
-//     var size = ($('#c1').css("stroke-width").substr(0, 1) * 1 + 1);
-//     if (size < 10) {
-//         $('#c1').css("stroke-width", size);
-//         $('#c2').css("stroke-width", size);
-//         $('#c3').css("stroke-width", size);
-//         $('#c4').css("stroke-width", size);
-//         svgData.strokewidth = size;
-//     }
-// }
-//
-// function decreaseStrokeSize() {
-//     var size = ($('#c1').css("stroke-width").substr(0, 1) * 1 - 1);
-//     if (size > 0) {
-//         $('#c1').css("stroke-width", size);
-//         $('#c2').css("stroke-width", size);
-//         $('#c3').css("stroke-width", size);
-//         $('#c4').css("stroke-width", size);
-//         svgData.strokewidth = size;
-//     }
-// }
-//
-// function increaseSize() {
-//     var size = (c1.getAttribute("r") * 1 + 5);
-//     if (size < 35) {
-//         c1.setAttribute("r", size);
-//         c2.setAttribute("r", size);
-//         c3.setAttribute("r", size);
-//         c4.setAttribute("r", size);
-//         svgData.radius = size;
-//     }
-// }
-//
-// function decreaseSize() {
-//     var size = (c1.getAttribute("r") * 1 - 5);
-//     if (size > 10) {
-//         c1.setAttribute("r", size);
-//         c2.setAttribute("r", size);
-//         c3.setAttribute("r", size);
-//         c4.setAttribute("r", size);
-//         svgData.radius = size;
-//     }
-//
-// }
-//
-// function setColor(pos, color) {
-//     $('#c'+pos).css("stroke",color);
-//     colors["c"+pos] = color;
-// }
-//
-// function setTColor(pos, color) {
-//     T["t"+pos].setAttribute("stroke",color);
-//     colors["t"+pos] = color;
-// }
-//
-// function toggleT() {
-//     if(T.visible) {
-//         T.t1.setAttribute("visibility", "hidden");
-//         T.t2.setAttribute("visibility", "hidden");
-//         T.t3.setAttribute("visibility", "hidden");
-//         T.t4.setAttribute("visibility", "hidden");
-//         T.visible = false;
-//     } else {
-//         T.t1.setAttribute("visibility", "visible");
-//         T.t2.setAttribute("visibility", "visible");
-//         T.t3.setAttribute("visibility", "visible");
-//         T.t4.setAttribute("visibility", "visible");
-//         T.visible = true;
-//     }
-// }
-//
-// function toggleCircles() {
-//        if(C.visible) {
-//         C.c1.setAttribute("visibility", "hidden");
-//         C.c2.setAttribute("visibility", "hidden");
-//         C.c3.setAttribute("visibility", "hidden");
-//         C.c4.setAttribute("visibility", "hidden");
-//         C.visible = false;
-//     } else {
-//         C.c1.setAttribute("visibility", "visible");
-//         C.c2.setAttribute("visibility", "visible");
-//         C.c3.setAttribute("visibility", "visible");
-//         C.c4.setAttribute("visibility", "visible");
-//         C.visible = true;
-//     }
-// }
-//
-// function rotateT(pos){
-//     var transform = T["t"+pos].getAttribute("transform") + " rotate(180, 18, 20)";
-//     T["t"+pos].setAttribute("transform", transform);
-// }
-//
+
+
+
+
 $(window).keypress(function(e) {
   console.log(e.keyCode);
 
@@ -581,32 +344,81 @@ $(window).keypress(function(e) {
   // A for circle
   else if (e.keyCode == 97) {
     currentSelection.shape = "circle";
+    drawShapeAtPosition(currentSelection.shape, currentSelection.pos);
   }
 
   // S for square
   else if (e.keyCode == 115) {
     currentSelection.shape = "square";
+    drawShapeAtPosition(currentSelection.shape, currentSelection.pos);
   }
 
   // D for triangle
   else if (e.keyCode == 100) {
     currentSelection.shape = "triangle";
+    drawShapeAtPosition(currentSelection.shape, currentSelection.pos);
   }
 
   // F for asterisk
   else if (e.keyCode == 102) {
     currentSelection.shape = "asterisk";
+    drawShapeAtPosition(currentSelection.shape, currentSelection.pos);
   }
 
   // G for x
   else if (e.keyCode == 103) {
     currentSelection.shape = "x";
+    drawShapeAtPosition(currentSelection.shape, currentSelection.pos);
   }
 
   // H for +
   else if (e.keyCode == 104) {
     currentSelection.shape = "+";
+    drawShapeAtPosition(currentSelection.shape, currentSelection.pos);
   }
+
+  // Q for hexagon
+  else if (e.keyCode == 113) {
+    currentSelection.shape = "hexagon";
+    drawShapeAtPosition(currentSelection.shape, currentSelection.pos);
+  }
+
+  // W for octagon
+  else if (e.keyCode == 119) {
+    currentSelection.shape = "octagon";
+    drawShapeAtPosition(currentSelection.shape, currentSelection.pos);
+  }
+
+  // E for diamond
+  else if (e.keyCode == 101) {
+    currentSelection.shape = "diamond";
+    drawShapeAtPosition(currentSelection.shape, currentSelection.pos);
+  }
+
+  // Z for tristar
+  else if (e.keyCode == 122) {
+    currentSelection.shape = "tristar";
+    drawShapeAtPosition(currentSelection.shape, currentSelection.pos);
+  }
+
+  // X for pentastar
+  else if (e.keyCode == 120) {
+    currentSelection.shape = "pentastar";
+    drawShapeAtPosition(currentSelection.shape, currentSelection.pos);
+  }
+
+  // C for diagonal1
+  else if (e.keyCode == 99) {
+    currentSelection.shape = "diagonal1";
+    drawShapeAtPosition(currentSelection.shape, currentSelection.pos);
+  }
+
+  // V for diagonal2
+  else if (e.keyCode == 118) {
+    currentSelection.shape = "diagonal2";
+    drawShapeAtPosition(currentSelection.shape, currentSelection.pos);
+  }
+
 
   ////////////////////////////////////////////////////////////////////////////
   //
@@ -646,12 +458,19 @@ $(window).keypress(function(e) {
 
   //R for right flanker
   else if (e.keyCode == 114) {
+      currentSelection.pos = 7;
       currentSelection.flankerPos = 1;
   }
 
   //L for left flanker
   else if (e.keyCode == 108) {
+      currentSelection.pos = 6;
       currentSelection.flankerPos = 0;
+  }
+
+  //M for left flanker
+  else if (e.keyCode == 109) {
+      randomizeHighLoad();
   }
 
 })
