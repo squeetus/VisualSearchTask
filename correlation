@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="./shared.js"></script>
+<script>
+
+var counts = [0,0],
+    masterCount = 0,
+    cellSize = padding * Math.SQRT1_2,
+    gridWidth = Math.ceil(width / cellSize),
+    gridHeight = Math.ceil(height / cellSize),
+    grid1 = new Array(gridWidth * gridHeight),
+    grid2 = new Array(gridWidth * gridHeight),
+    k = 0,
+    jitter = true,
+    jitterFactor = 10;
+
+
+
+
+// set up linear line function with the desired slope and intercept
+var linearLine = function(m, b) {
+  return function(x) {
+    return ( m * x ) + b;
+  }
+};
+var myLine = linearLine(20, 100);
+
+
+// set up parabolic line
+// a sets width, c is y offset, shift is offset in x direction
+var parabolicLine = function(a, b, c, shift) {
+    return function(x) {
+      return (a * (x - shift) * (x - shift) + b * (x - shift) + c)
+    }
+}
+var myParabola = parabolicLine(-10, 1, 600, 6);
+
+
+
+
+
+
+function jitterX(x) {
+  if(!jitter) return x;
+  var offset = Math.random() * 15;
+  if(Math.random() < 0.5) {
+    offset *= -1;
+  }
+  return x + offset;
+}
+
+function jitterY(y, x) {
+  // return tryThis(y, x);
+  if(!jitter) return y;
+  var segment = Math.random(),
+      offset = 0;
+  if(segment <= 0.70) {
+      offset = 5;
+  } else if (segment > 0.70 && segment <= 0.90) { // 40% of time
+      offset = 10;
+  } else {  // 10% of time
+      offset = 15;
+  }
+
+  offset = Math.random() * offset
+  if(Math.random() < 0.5) {
+    offset *= -1;
+  }
+  return y + (offset * jitterFactor);
+}
+
+// function tryThis(y, x) {
+//   var r = 0.8;
+//   var lambda = (r - Math.sqrt((r*r) - (r*r*r*r)) / (2*r*r - 1));
+//   var yPrime = ((lambda * x + ((1 - lambda) * y)) / Math.sqrt((lambda*lambda) + ((1-lambda)*(1-lambda))));
+//   return yPrime;
+// }
+
+
+
+
+
+// function jitterY2(y) {
+//   var segment = Math.random(),
+//       offset = 0;
+//   if(segment <= 0.50) {   // 50% of time,
+//       offset = 50;
+//   } else if (segment > 0.50 && segment <= 0.80) { // 30% of time
+//       offset = 100;
+//   } else {  // 20% of time
+//       offset = 150;
+//   }
+//
+//   offset = Math.random() * offset
+//   if(Math.random() < 0.5) {
+//     offset *= -1;
+//   }
+//   return y + offset;
+// }
+
+//
+/*   D R A W    E L E M E N T S  */
+//
+for(var i = 0; i < maxElements; i++) {
+  var done = false,
+      tries = 0,
+      maxTries = 10000,
+      halfpad = padding / 4,
+      shape,
+      j = (i % 2 == 0 ? 0 : 1),
+      whichSVG = 1;
+
+  // find an unoccupied position for the shape
+  while(!done && tries++ < maxTries) {
+    if(i%2 != 0) {
+      shape = shape1;
+        // var x = jitterX(counts[1] * (width / (maxElements/2))),
+        //      y = jitterY(myParabola(counts[1]));
+        // var x = jitterX(Math.floor(Math.random() * (width))),
+        //     y = jitterY(myParabola(x / (maxElements/2)));
+        var x = Math.floor(Math.random() * (width));
+            y = Math.floor(Math.random() * height);
+
+    } else { // this is the one correlated around line
+      shape = shape2;
+      if(mode == 1) whichSVG = 2;
+        // var x = jitterX(counts[0] * (width / (maxElements/2))),
+          // y = jitterY(height - myLine(counts[0]));
+        var x = jitterX(Math.floor(Math.random() * (width))),
+            y = jitterY(height - myLine(x / (maxElements/2)), x);
+    }
+    // ensure element is placed within the canvas and doesn't overlap other shapes
+    if (halfpad <= x && x < (width - halfpad) && halfpad <= y && y < (height - halfpad) && far(x, y, whichSVG)) done = true;
+    // if(far(x, y)) done = true;
+  }
+
+  // mark position as filled
+  if(mode == 1 && whichSVG == 2) {
+    grid2[gridWidth * (y / cellSize | 0) + (x / cellSize | 0)] = [x, y];
+    drawShape(shape, [x, y], j, svg2);
+  } else {
+    grid1[gridWidth * (y / cellSize | 0) + (x / cellSize | 0)] = [x, y];
+    drawShape(shape, [x, y], j, svg1);
+  // console.log('drawing ', shape);
+  }
+};
+console.log(counts);
+
+
+function far(x, y, whichSVG) {
+  var i = x / cellSize | 0,
+      j = y / cellSize | 0,
+      i0 = Math.max(i - 2, 0),
+      j0 = Math.max(j - 2, 0),
+      i1 = Math.min(i + 3, gridWidth),
+      j1 = Math.min(j + 3, gridHeight);
+
+  for (j = j0; j < j1; ++j) {
+    var o = j * gridWidth;
+    for (i = i0; i < i1; ++i) {
+      if(whichSVG == 1) {
+        if (s = grid1[o + i]) {
+          // console.log('overlap in 1');
+          var s,
+              dx = s[0] - x,
+              dy = s[1] - y;
+          if (dx * dx + dy * dy < (padding*padding)) return false;
+        }
+      } else if(whichSVG == 2) {
+        if (s = grid2[o + i]) {
+          // console.log('overlap in 2');
+          var s,
+              dx = s[0] - x,
+              dy = s[1] - y;
+          if (dx * dx + dy * dy < (padding*padding)) return false;
+        }
+      } else {
+        // console.log("???");
+      }
+    }
+  }
+
+  return true;
+}
+
+(function() {
+  var sumX = 0,
+      sumY = 0,
+      meanX,
+      meanY,
+      varX = 0,
+      varY = 0,
+      xy = 0,
+      sX,
+      sY,
+      stddevX,
+      stddevY,
+      zX = 0,
+      zY = 0,
+      z = 0;
+  // handle linear
+  var shape0 = d3.selectAll(".shape0");
+  var xAttr = (shape2 == 0) ? 'cx' : 'x';
+  var yAttr = (shape2 == 0) ? 'cy' : 'y';
+  console.log(xAttr, yAttr);
+  var xs = "";
+  var ys = "";
+
+  // shape0.each(function(d, i) {
+  //   xs += (1* d3.select(this).attr(xAttr)) + "\n";
+  //   ys += (1* d3.select(this).attr(yAttr)) + "\n";
+  // });
+  // console.log(xs,"\n\n", ys);
+  // compute means
+  //
+  shape0.each(function(d, i) {
+    sumX += (1 * d3.select(this).attr(xAttr));
+    sumY += (1 * d3.select(this).attr(yAttr));
+  });
+  meanX = sumX/(maxElements/2);
+  meanY = sumY/(maxElements/2);
+  console.log('means:', meanX, meanY);
+
+  // find sum of squares of difference from means
+  shape0.each(function(d, i) {
+    varX += (1 * d3.select(this).attr(xAttr) - meanX)*(1 * d3.select(this).attr(xAttr) - meanX);
+    varY += (1 * d3.select(this).attr(yAttr) - meanY)*(1 * d3.select(this).attr(yAttr) - meanY);
+    xy += (1 * d3.select(this).attr(xAttr) - meanX) * (1 * d3.select(this).attr(yAttr) - meanY);
+  });
+  console.log('sum of squares:', varX, varY);
+  console.log('xy:', xy);
+
+  console.log("r is ", -1* (xy / Math.sqrt(varX * varY)));
+
+})();
+</script>

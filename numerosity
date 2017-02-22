@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="./shared.js"></script>
+<script>
+
+/* https://bl.ocks.org/mbostock/19168c663618b7f07158#index.html */
+
+var delta = 98;
+
+var aSample = poissonDiscSampler(width, height, padding);
+
+var counts = [0,0],
+    masterCount = 0;
+
+function finalize() {
+  var shape0 = d3.selectAll(".shape0").size();
+  console.log(shapes[shape1], shape0, shapes[shape2], (masterCount - shape0));
+}
+
+d3.timer(function() {
+  if(masterCount >= maxElements) {
+    finalize();
+    return true;
+  };
+
+  for (var i = 0; i < maxElements; ++i) {
+    // alternate between shape 1 and shape 2
+    //  until delta is reached, then just do shape 2
+    if(masterCount % 2 == 0 && masterCount < (maxElements - delta)) {
+      // var s = aSample(2);
+      var s = aSample(1);
+      if (!s) return true;
+      // use whole numbers?
+      s[0] = Math.floor(s[0]);
+      s[1] = Math.floor(s[1]);
+      // drawShape(shape1, s, 0, svg2);
+
+      drawShape(shape1, s, 0, svg1);
+    } else {
+      if(mode == 0)
+        var s = aSample(1);
+      else
+        var s = aSample(2);
+
+      if (!s) return true;
+
+      s[0] = Math.floor(s[0]);
+      s[1] = Math.floor(s[1]);
+
+      if(mode == 0)
+          drawShape(shape2, s, 1, svg1);
+      else {
+          drawShape(shape2, s, 1, svg2);
+      }
+    }
+    masterCount++;
+  }
+});
+
+// Based on https://www.jasondavies.com/poisson-disc/
+function poissonDiscSampler(width, height, radius) {
+  var k = 30, // maximum number of samples before rejection
+      radius2 = radius * radius,
+      R = 3 * radius2,
+      cellSize = radius * Math.SQRT1_2,
+      gridWidth = Math.ceil(width / cellSize),
+      gridHeight = Math.ceil(height / cellSize),
+      grid1 = new Array(gridWidth * gridHeight),
+      grid2 = new Array(gridWidth * gridHeight),
+      queue = [],
+      queueSize = 0,
+      sampleSize = 0;
+
+  return function(whichSVG) {
+    // if (!sampleSize) return sample(Math.random() * width, Math.random() * height);
+    // pick a random y position as the center? currently just midpoint
+    if (!sampleSize) return sample(width/2, pickMidpoint(), whichSVG);
+
+    // Pick a random existing sample and remove it from the queue.
+    while (queueSize) {
+      var i = Math.random() * queueSize | 0,
+          s = queue[i];
+
+      // Make a new candidate between [radius, 2 * radius] from the existing sample.
+      for (var j = 0; j < k; ++j) {
+        var a = 2 * Math.PI * Math.random(),
+            r = Math.sqrt(Math.random() * R + radius2),
+            x = s[0] + r * Math.cos(a),
+            y = s[1] + r * Math.sin(a);
+
+        // Reject candidates that are outside the allowed extent,
+        // or closer than 2 * radius to any existing sample.
+        if (0 <= x && x < width && 0 <= y && y < height && far(x, y, whichSVG)) return sample(x, y, whichSVG);
+      }
+
+      queue[i] = queue[--queueSize];
+      queue.length = queueSize;
+    }
+  };
+
+  function pickMidpoint() {
+      return height * (Math.random() * (0.7 - 0.3) + 0.3);
+  }
+
+  function far(x, y, whichSVG) {
+    var i = x / cellSize | 0,
+        j = y / cellSize | 0,
+        i0 = Math.max(i - 2, 0),
+        j0 = Math.max(j - 2, 0),
+        i1 = Math.min(i + 3, gridWidth),
+        j1 = Math.min(j + 3, gridHeight);
+
+    for (j = j0; j < j1; ++j) {
+      var o = j * gridWidth;
+      for (i = i0; i < i1; ++i) {
+        if(whichSVG == 1) {
+          if (s = grid1[o + i]) {
+            // console.log('overlap in 1');
+            var s,
+                dx = s[0] - x,
+                dy = s[1] - y;
+            if (dx * dx + dy * dy < radius2) return false;
+          }
+        } else if(whichSVG == 2) {
+          if (s = grid2[o + i]) {
+            // console.log('overlap in 2');
+            var s,
+                dx = s[0] - x,
+                dy = s[1] - y;
+            if (dx * dx + dy * dy < radius2) return false;
+          }
+        } else {
+          // console.log("???");
+        }
+
+      }
+    }
+    // console.log('safe!', whichSVG, grid1, grid2);
+    return true;
+  }
+
+  function sample(x, y, whichSVG) {
+    var s = [x, y];
+    queue.push(s);
+    if(whichSVG == 1) {
+      grid1[gridWidth * (y / cellSize | 0) + (x / cellSize | 0)] = s;
+    } else if(whichSVG == 2) {
+      grid2[gridWidth * (y / cellSize | 0) + (x / cellSize | 0)] = s;
+    }
+    ++sampleSize;
+    ++queueSize;
+    // console.log("placing sample",s,  whichSVG, grid1, grid2);
+    return s;
+  }
+}
+
+</script>
