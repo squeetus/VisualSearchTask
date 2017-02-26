@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <body>
+    <div id="correlation">r = </div>
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <script src="./shared.js"></script>
 <script>
@@ -14,7 +15,10 @@ var counts = [0,0],
     grid2 = new Array(gridWidth * gridHeight),
     k = 0,
     jitter = true,
-    jitterFactor = 10;
+    jitterFactor = 10,
+    numRedos = 0,
+    lowBound = 0.40,
+    highBound = 0.55;
 
 
 
@@ -103,50 +107,52 @@ function jitterY(y, x) {
 //
 /*   D R A W    E L E M E N T S  */
 //
-for(var i = 0; i < maxElements; i++) {
-  var done = false,
-      tries = 0,
-      maxTries = 10000,
-      halfpad = padding / 4,
-      shape,
-      j = (i % 2 == 0 ? 0 : 1),
-      whichSVG = 1;
+function draw() {
+  for(var i = 0; i < maxElements; i++) {
+    var done = false,
+        tries = 0,
+        maxTries = 10000,
+        halfpad = padding / 4,
+        shape,
+        j = (i % 2 == 0 ? 0 : 1),
+        whichSVG = 1;
 
-  // find an unoccupied position for the shape
-  while(!done && tries++ < maxTries) {
-    if(i%2 != 0) {
-      shape = shape1;
-        // var x = jitterX(counts[1] * (width / (maxElements/2))),
-        //      y = jitterY(myParabola(counts[1]));
-        // var x = jitterX(Math.floor(Math.random() * (width))),
-        //     y = jitterY(myParabola(x / (maxElements/2)));
-        var x = Math.floor(Math.random() * (width));
-            y = Math.floor(Math.random() * height);
+    // find an unoccupied position for the shape
+    while(!done && tries++ < maxTries) {
+      if(i%2 != 0) {
+        shape = shape1;
+          // var x = jitterX(counts[1] * (width / (maxElements/2))),
+          //      y = jitterY(myParabola(counts[1]));
+          // var x = jitterX(Math.floor(Math.random() * (width))),
+          //     y = jitterY(myParabola(x / (maxElements/2)));
+          var x = Math.floor(Math.random() * (width));
+              y = Math.floor(Math.random() * height);
 
-    } else { // this is the one correlated around line
-      shape = shape2;
-      if(mode == 1) whichSVG = 2;
-        // var x = jitterX(counts[0] * (width / (maxElements/2))),
-          // y = jitterY(height - myLine(counts[0]));
-        var x = jitterX(Math.floor(Math.random() * (width))),
-            y = jitterY(height - myLine(x / (maxElements/2)), x);
+      } else { // this is the one correlated around line
+        shape = shape2;
+        if(mode == 1) whichSVG = 2;
+          // var x = jitterX(counts[0] * (width / (maxElements/2))),
+            // y = jitterY(height - myLine(counts[0]));
+          var x = jitterX(Math.floor(Math.random() * (width))),
+              y = jitterY(height - myLine(x / (maxElements/2)), x);
+      }
+      // ensure element is placed within the canvas and doesn't overlap other shapes
+      if (halfpad <= x && x < (width - halfpad) && halfpad <= y && y < (height - halfpad) && far(x, y, whichSVG)) done = true;
+      // if(far(x, y)) done = true;
     }
-    // ensure element is placed within the canvas and doesn't overlap other shapes
-    if (halfpad <= x && x < (width - halfpad) && halfpad <= y && y < (height - halfpad) && far(x, y, whichSVG)) done = true;
-    // if(far(x, y)) done = true;
-  }
 
-  // mark position as filled
-  if(mode == 1 && whichSVG == 2) {
-    grid2[gridWidth * (y / cellSize | 0) + (x / cellSize | 0)] = [x, y];
-    drawShape(shape, [x, y], j, svg2);
-  } else {
-    grid1[gridWidth * (y / cellSize | 0) + (x / cellSize | 0)] = [x, y];
-    drawShape(shape, [x, y], j, svg1);
-  // console.log('drawing ', shape);
-  }
-};
-console.log(counts);
+    // mark position as filled
+    if(mode == 1 && whichSVG == 2) {
+      grid2[gridWidth * (y / cellSize | 0) + (x / cellSize | 0)] = [x, y];
+      drawShape(shape, [x, y], j, svg2);
+    } else {
+      grid1[gridWidth * (y / cellSize | 0) + (x / cellSize | 0)] = [x, y];
+      drawShape(shape, [x, y], j, svg1);
+    // console.log('drawing ', shape);
+    }
+  };
+  console.log(counts);
+} // draw
 
 
 function far(x, y, whichSVG) {
@@ -185,7 +191,7 @@ function far(x, y, whichSVG) {
   return true;
 }
 
-(function() {
+function getR() {
   var sumX = 0,
       sumY = 0,
       meanX,
@@ -199,7 +205,8 @@ function far(x, y, whichSVG) {
       stddevY,
       zX = 0,
       zY = 0,
-      z = 0;
+      z = 0,
+      r  =0;
   // handle linear
   var shape0 = d3.selectAll(".shape0");
   var xAttr = (shape2 == 0) ? 'cx' : 'x';
@@ -232,7 +239,42 @@ function far(x, y, whichSVG) {
   console.log('sum of squares:', varX, varY);
   console.log('xy:', xy);
 
-  console.log("r is ", -1* (xy / Math.sqrt(varX * varY)));
+  r = -1 * (xy / Math.sqrt(varX * varY));
+  d3.select("#correlation").text("r = " + r);
+  console.log("r is ", r);
 
-})();
+  if(numRedos++ < 100 && (r < lowBound || r > highBound) ) {
+    reset();
+    draw();
+    getR();
+
+  } else if(numRedos >= 100 ) {
+    console.log('not happening');
+  } else {
+    console.log('found');
+  }
+}
+
+function reset() {
+  svg1.selectAll(".shape1").remove();
+  svg1.selectAll(".shape0").remove();
+  if(svg2) {
+    svg2.selectAll(".shape1").remove();
+    svg2.selectAll(".shape0").remove();
+  }
+  counts = [0,0],
+  masterCount = 0,
+  cellSize = padding * Math.SQRT1_2,
+  gridWidth = Math.ceil(width / cellSize),
+  gridHeight = Math.ceil(height / cellSize),
+  grid1 = new Array(gridWidth * gridHeight),
+  grid2 = new Array(gridWidth * gridHeight),
+  k = 0,
+  jitter = true,
+  jitterFactor = 10;
+}
+
+draw();
+getR();
+
 </script>
